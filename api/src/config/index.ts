@@ -27,10 +27,14 @@ const EnvSchema = z.object({
   PADDLE_WARMUP_ON_START: z.enum(['true', 'false']).default('false'),
 });
 
-// Validate and warn on startup
+// Validate environment
 const parsed = EnvSchema.safeParse(process.env);
+
 if (!parsed.success) {
-  console.error('[CONFIG] ❌ Invalid environment variables:', parsed.error.flatten().fieldErrors);
+  console.error(
+    '[CONFIG] ❌ Invalid environment variables:',
+    parsed.error.flatten().fieldErrors
+  );
   process.exit(1);
 }
 
@@ -72,13 +76,16 @@ export const config = {
   logging: {
     level: env.LOG_LEVEL,
   },
+
   retentionMinutes: parseInt(env.RETENTION_MINUTES, 10),
+
   extraction: {
     geminiTimeoutMs: parseInt(env.GEMINI_TIMEOUT_MS, 10),
     cacheTtlMinutes: parseInt(env.EXTRACTION_CACHE_TTL_MINUTES, 10),
     cacheMaxItems: parseInt(env.EXTRACTION_CACHE_MAX_ITEMS, 10),
     paddleWarmupOnStart: env.PADDLE_WARMUP_ON_START === 'true',
   },
+
   preprocessing: {
     maxEdge: parseInt(env.PREPROCESS_MAX_EDGE, 10),
     jpegQuality: parseInt(env.PREPROCESS_JPEG_QUALITY, 10),
@@ -88,8 +95,44 @@ export const config = {
 
 // ─── Production Warnings ──────────────────────────────────────────
 if (config.nodeEnv === 'production') {
-  if (!config.gemini.apiKey) console.warn('[CONFIG] ⚠️  GEMINI_API_KEY is not set — extraction will rely on PaddleOCR');
-  if (!config.mongodb.uri) console.warn('[CONFIG] ⚠️  MONGODB_URI is not set — using in-memory store (data will not persist)');
-  if (config.jwt.secret === 'dev-secret-change-in-production') console.warn('[CONFIG] ⚠️  JWT_SECRET is using the default dev value — this is insecure in production!');
-  if (config.security.masterKey === 'dev-master-key-change-in-production') console.warn('[CONFIG] ⚠️  MASTER_KEY is using the default dev value');
+  if (!config.gemini.apiKey) {
+    console.warn(
+      '[CONFIG] ⚠️ GEMINI_API_KEY is not set — extraction will rely on PaddleOCR'
+    );
+  }
+
+  if (!config.mongodb.uri) {
+    console.warn(
+      '[CONFIG] ⚠️ MONGODB_URI is not set — using in-memory store (data will not persist)'
+    );
+  }
+
+  if (config.security.masterKey === 'dev-master-key-change-in-production') {
+    console.warn(
+      '[CONFIG] ⚠️ MASTER_KEY is using the default dev value'
+    );
+  }
+
+  // ─── Production JWT Validation (Fail Fast) ───────────────────────
+
+  if (!process.env.JWT_SECRET || process.env.JWT_SECRET.trim() === '') {
+    console.error(
+      '[CONFIG] ❌ JWT_SECRET is missing or empty. Refusing to start in production.'
+    );
+    process.exit(1);
+  }
+
+  if (config.jwt.secret === 'dev-secret-change-in-production') {
+    console.error(
+      '[CONFIG] ❌ JWT_SECRET is using the development fallback value. Refusing to start in production.'
+    );
+    process.exit(1);
+  }
+
+  if (config.jwt.secret.length < 32) {
+    console.error(
+      '[CONFIG] ❌ JWT_SECRET must be at least 32 characters long in production.'
+    );
+    process.exit(1);
+  }
 }
