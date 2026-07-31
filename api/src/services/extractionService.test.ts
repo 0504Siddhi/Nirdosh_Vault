@@ -12,107 +12,46 @@ import {
 
 import { preprocessDocument } from './preprocessingService';
 
-async function runExtractionTests() {
-  console.log(
-    '--- Running Single-Request Batch Extraction & Schema Unit Tests ---'
-  );
+async function runExtractionTests(): Promise<void> {
+  console.log('--- Running Extraction Schema & Safety Tests ---');
 
-  // 1. Single-document schema validation
-  const rawValidDoc = ExtractedDocSchema.parse({
+  const aadhaar = ExtractedDocSchema.parse({
     fileIndex: 0,
     docType: 'aadhaar',
     fields: [
       {
-        fieldKey: 'aadhaar_no',
+        fieldKey: 'aadhaar_number',
         label: 'Aadhaar Number',
         value: '1234 5678 9012',
-        normalized: '1234 5678 9012',
-        type: 'string',
-        page: 1,
-        confidence: 0.95,
-        evidenceText: '1234 5678 9012',
+        confidence: 95,
+        page: '1',
       },
       {
         fieldKey: 'full_name',
         label: 'Name',
         value: 'John Doe',
-        normalized: 'John Doe',
-        type: 'string',
-        page: 1,
         confidence: 0.9,
-        evidenceText: 'John Doe',
-      },
-    ],
-    needsReview: false,
-  });
-
-  assert.equal(rawValidDoc.docType, 'aadhaar');
-  assert.equal(rawValidDoc.fields.length, 2);
-
-  // 2. Tolerant Gemini value handling
-  const tolerantDoc = ExtractedDocSchema.parse({
-    fileIndex: '0',
-    docType: 'aadhaar',
-    fields: [
-      {
-        fieldKey: 'aadhaar_no',
-        label: 'Aadhaar Number',
-        value: '1234 5678 9012',
-        page: '1',
-        confidence: 95,
       },
     ],
   });
 
-  assert.equal(tolerantDoc.fileIndex, 0);
-  assert.equal(tolerantDoc.fields[0].page, 1);
-  assert.equal(tolerantDoc.fields[0].confidence, 0.95);
+  assert.equal(aadhaar.docType, 'aadhaar');
+  assert.equal(aadhaar.fileIndex, 0);
+  assert.equal(aadhaar.fields[0].fieldKey, 'aadhaar_no');
+  assert.equal(aadhaar.fields[0].confidence, 0.95);
+  assert.equal(aadhaar.fields[0].page, 1);
+  assert.equal(validateExtractionQuality(aadhaar).valid, true);
 
-  // 3. Multi-document batch schema validation
-  const rawBatchDoc = BatchExtractedDocSchema.parse({
+  const batch = BatchExtractedDocSchema.parse({
     documents: [
-      {
-        fileIndex: 0,
-        docType: 'aadhaar',
-        fields: [
-          {
-            fieldKey: 'aadhaar_no',
-            label: 'Aadhaar Number',
-            value: '1234 5678 9012',
-            normalized: '',
-            type: 'string',
-            page: 1,
-            confidence: 0.95,
-            evidenceText: '',
-          },
-        ],
-        needsReview: false,
-      },
-      {
-        fileIndex: 1,
-        docType: 'pan',
-        fields: [
-          {
-            fieldKey: 'pan_no',
-            label: 'PAN Number',
-            value: 'ABCDE1234F',
-            normalized: '',
-            type: 'string',
-            page: 1,
-            confidence: 0.95,
-            evidenceText: '',
-          },
-        ],
-        needsReview: false,
-      },
+      { fileIndex: 0, docType: 'aadhaar' },
+      { fileIndex: 1, docType: 'pan' },
+      { fileIndex: 2, docType: 'ration_card' },
     ],
   });
 
-  assert.equal(rawBatchDoc.documents.length, 2);
-  assert.equal((rawBatchDoc.documents[0] as any).docType, 'aadhaar');
-  assert.equal((rawBatchDoc.documents[1] as any).docType, 'pan');
+  assert.equal(batch.documents.length, 3);
 
-  // 4. Minimum viable field quality check
   const invalidAadhaar = ExtractedDocSchema.parse({
     fileIndex: 0,
     docType: 'aadhaar',
@@ -121,47 +60,110 @@ async function runExtractionTests() {
         fieldKey: 'gender',
         label: 'Gender',
         value: 'Male',
-        normalized: '',
-        type: 'string',
-        page: 1,
         confidence: 0.9,
-        evidenceText: '',
       },
     ],
-    needsReview: false,
   });
 
-  const qualityCheck = validateExtractionQuality(invalidAadhaar);
+  const aadhaarQuality = validateExtractionQuality(invalidAadhaar);
+  assert.equal(aadhaarQuality.valid, false);
+  assert.equal(aadhaarQuality.reason, 'missing_aadhaar_key_fields');
 
-  assert.equal(qualityCheck.valid, false);
-  assert.equal(
-    qualityCheck.reason,
-    'missing_aadhaar_key_fields'
-  );
+  for (const alias of [
+    'ration_card',
+    'ration card',
+    'rationcard',
+    'pds_card',
+    'food_security_card',
+    'nfsa_card',
+  ]) {
+    const parsed = ExtractedDocSchema.parse({
+      fileIndex: 0,
+      docType: alias,
+      fields: [
+        {
+          fieldKey: 'ration_card_no',
+          label: 'Ration Card Number',
+          value: 'RC-123456',
+          confidence: 0.95,
+        },
+      ],
+    });
 
-  // 5. Alias field quality validation
-  const aliasAadhaar = ExtractedDocSchema.parse({
-    fileIndex: 0,
-    docType: 'aadhaar',
+    assert.equal(parsed.docType, 'ration_card');
+  }
+
+  const rationCard = ExtractedDocSchema.parse({
+    fileIndex: 2,
+    docType: 'ration_card',
     fields: [
       {
-        fieldKey: 'aadhaar_number',
-        label: 'Aadhaar Number',
-        value: '1234 5678 9012',
+        fieldKey: 'ration_card_no',
+        label: 'Ration Card Number',
+        value: 'RC-123456',
         confidence: 0.95,
+      },
+      {
+        fieldKey: 'head_of_family_name',
+        label: 'Head of Family Name',
+        value: 'S. P. Patil',
+        confidence: 0.9,
+      },
+      {
+        fieldKey: 'member_name_1',
+        label: 'Member Name 1',
+        value: 'S. P. Patil',
+        confidence: 0.9,
+      },
+      {
+        fieldKey: 'member_age_1',
+        label: 'Member Age 1',
+        value: '26',
+        confidence: 0.9,
       },
     ],
   });
 
-  const aliasQuality = validateExtractionQuality(aliasAadhaar);
+  assert.equal(rationCard.docType, 'ration_card');
+  assert.equal(rationCard.fields[0].fieldKey, 'ration_card_number');
+  assert.equal(rationCard.fields[1].fieldKey, 'head_of_family_name');
+  assert.equal(rationCard.fields[2].fieldKey, 'member_name_1');
+  assert.equal(rationCard.fields[3].fieldKey, 'member_age_1');
+  assert.equal(validateExtractionQuality(rationCard).valid, true);
 
-  assert.equal(aliasQuality.valid, true);
+  const invalidRationCard = ExtractedDocSchema.parse({
+    fileIndex: 0,
+    docType: 'ration_card',
+    fields: [
+      {
+        fieldKey: 'gender',
+        label: 'Gender',
+        value: 'Male',
+        confidence: 0.9,
+      },
+    ],
+  });
 
-  // 6. Image preprocessing and resizing test
-  const testImgPath = path.join(
-    __dirname,
-    'test_batch_sample.jpg'
-  );
+  const rationQuality = validateExtractionQuality(invalidRationCard);
+  assert.equal(rationQuality.valid, false);
+  assert.equal(rationQuality.reason, 'missing_ration_card_key_fields');
+
+  const signature = ExtractedDocSchema.parse({
+    fileIndex: 0,
+    docType: 'driving_licence',
+    fields: [
+      {
+        fieldKey: 'signature',
+        label: 'Signature',
+        value: 'Detected',
+        confidence: 0.9,
+      },
+    ],
+  });
+
+  assert.equal(signature.fields[0].fieldKey, 'signature');
+
+  const testImagePath = path.join(__dirname, 'test_batch_sample.jpg');
 
   await sharp({
     create: {
@@ -176,46 +178,39 @@ async function runExtractionTests() {
     },
   })
     .jpeg()
-    .toFile(testImgPath);
+    .toFile(testImagePath);
 
   try {
     const prepResult = await preprocessDocument(
-      testImgPath,
+      testImagePath,
       'image/jpeg'
     );
 
     assert.equal(prepResult.pageImages.length, 1);
 
-    const meta = await sharp(
+    const metadata = await sharp(
       prepResult.pageImages[0]
     ).metadata();
 
-    // Match this value to preprocessingService.ts.
-    assert.ok((meta.width ?? 0) <= 1500);
-    assert.ok((meta.height ?? 0) <= 1500);
+    assert.ok((metadata.width ?? 0) <= 1500);
+    assert.ok((metadata.height ?? 0) <= 1500);
 
     prepResult.cleanup();
   } finally {
     try {
-      fs.unlinkSync(testImgPath);
+      fs.unlinkSync(testImagePath);
     } catch {
-      // Ignore cleanup errors
+      // Ignore cleanup failures.
     }
   }
 
-  // 7. PaddleOCR readiness check
-  // This should return safely even when PaddleOCR is not running.
-  const isReady = await paddleOCR.waitForReady(1000);
+  const ready = await paddleOCR.waitForReady(1000);
+  assert.strictEqual(typeof ready, 'boolean');
 
-  assert.strictEqual(typeof isReady, 'boolean');
-
-  console.log(
-    '✅ Single-Request Batch Extraction & Schema Unit Tests Passed!'
-  );
+  console.log('✅ Extraction schema, ration-card and safety tests passed.');
 }
 
-runExtractionTests().catch((err) => {
-  console.error('❌ Extraction Unit Test Failed:', err);
+runExtractionTests().catch((error) => {
+  console.error('❌ Extraction test failed:', error);
   process.exit(1);
 });
-

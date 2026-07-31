@@ -40,6 +40,16 @@ const DOC_TYPE_ALIASES: Record<string, string> = {
   birth_cert: 'birth_certificate',
   birthcertificate: 'birth_certificate',
   school_marksheet: 'marksheet',
+  mark_sheet: 'marksheet',
+
+  ration: 'ration_card',
+  rationcard: 'ration_card',
+  ration_card_document: 'ration_card',
+  food_security_card: 'ration_card',
+  national_food_security_card: 'ration_card',
+  nfsa_card: 'ration_card',
+  pds_card: 'ration_card',
+  public_distribution_system_card: 'ration_card',
 };
 
 const SUPPORTED_DOC_TYPES = new Set([
@@ -50,6 +60,7 @@ const SUPPORTED_DOC_TYPES = new Set([
   'birth_certificate',
   'passport',
   'marksheet',
+  'ration_card',
   'unknown',
 ]);
 
@@ -79,6 +90,12 @@ const FIELD_KEY_ALIASES: Record<string, string> = {
   driving_license_number: 'dl_no',
 
   passport_number: 'passport_no',
+
+  ration_number: 'ration_card_number',
+  ration_card_no: 'ration_card_number',
+  rc_number: 'ration_card_number',
+  family_card_number: 'ration_card_number',
+
   registration_number: 'reg_no',
   registration_no: 'reg_no',
   certificate_number: 'reg_no',
@@ -137,6 +154,7 @@ export const ExtractedDocSchema = z.object({
     'birth_certificate',
     'passport',
     'marksheet',
+    'ration_card',
     'unknown',
   ])),
   fields: z.preprocess(v => (Array.isArray(v) ? v : []), z.array(ExtractedFieldSchema)),
@@ -217,6 +235,15 @@ export function validateExtractionQuality(doc: ExtractedDocResult): { valid: boo
     case 'marksheet':
       if (!keys.has('full_name') && !keys.has('roll_no') && !keys.has('institution')) {
         return { valid: false, reason: 'missing_marksheet_key_fields' };
+      }
+      break;
+    case 'ration_card':
+      if (
+        !keys.has('ration_card_number') &&
+        !keys.has('head_of_family_name') &&
+        ![...keys].some(key => /^member_name(?:_\d+)?$/.test(key))
+      ) {
+        return { valid: false, reason: 'missing_ration_card_key_fields' };
       }
       break;
   }
@@ -670,7 +697,7 @@ You are a high-speed, multi-document OCR extraction engine for Indian identity d
 You will be provided with images corresponding to multiple separate documents.
 Examine each document carefully and extract all printed text into structured JSON.
 
-Supported docType values: aadhaar, pan, voter_id, driving_licence, birth_certificate, passport, marksheet, unknown.
+Supported docType values: aadhaar, pan, voter_id, driving_licence, birth_certificate, passport, marksheet, ration_card, unknown.
 
 JSON Response Format:
 {
@@ -697,8 +724,18 @@ JSON Response Format:
 Rules:
 - Extract data for EACH document present in the input array.
 - "fileIndex" MUST match the index specified for each document (0, 1, 2, ...).
-- Only extract VISIBLE printed text. Do not guess or hallucinate.
+- Only extract VISIBLE printed text. Do not guess, infer, calculate, complete, or hallucinate.
 - Set confidence below 0.6 if text is unclear.
+- Never calculate date_of_birth from age.
+- If only age is visible, use fieldKey "age" or "member_age_N"; never use "dob".
+- Use "dob" only when an explicit date, month-year, or year of birth is visibly printed.
+- If only a year of birth is visible, set incomplete=true.
+- For ration cards, use docType "ration_card".
+- For ration cards, use "ration_card_number", "head_of_family_name", "member_name_N", "member_age_N", and "member_relation_N".
+- Never map a household head or ration-card member automatically to "full_name".
+- For signature, thumb impression, fingerprint, and photograph, return presence only: "Detected" or "Not detected".
+- Never transcribe handwriting from a signature as a person's name.
+- Do not output duplicate entries for the same field on the same document.
   `;
 
   // Build multimodal contents payload with document index headers
@@ -837,6 +874,13 @@ async function extractWithPaddleOCR(
       /\d{4}\s\d{4}\s\d{4}/.test(normalizedText)
     ) {
       docType = 'aadhaar';
+    } else if (
+      normalizedText.includes('RATION CARD') ||
+      normalizedText.includes('PUBLIC DISTRIBUTION SYSTEM') ||
+      normalizedText.includes('NATIONAL FOOD SECURITY') ||
+      normalizedText.includes('NFSA')
+    ) {
+      docType = 'ration_card';
     }
 
     const fields: IDocumentField[] = [];
@@ -872,21 +916,21 @@ async function extractWithPaddleOCR(
       });
     }
 
-    let dobMatch = normalizedText.match(/\b(\d{2}\/\d{2}\/\d{4})\b/);
-    if (!dobMatch) {
-      dobMatch = normalizedText.match(/\b(19\d{2}|20\d{2})\b/);
-    }
+    const dobMatch = normalizedText.match(
+      /(?:DOB|DATE OF BIRTH|YEAR OF BIRTH)\s*[:\-]?\s*(\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{4}|\d{4})/
+    );
 
     if (dobMatch) {
       fields.push({
         fieldKey: 'dob',
-        label: dobMatch[0].length === 4 ? 'Year of Birth' : 'Date of Birth',
-        value: dobMatch[0],
+        label: dobMatch[1].length === 4 ? 'Year of Birth' : 'Date of Birth',
+        value: dobMatch[1],
         normalized: '',
         type: 'date',
         page: 1,
         confidence: overallConfidence,
         evidenceText: dobMatch[0],
+        incomplete: dobMatch[1].length === 4,
       });
     }
 
