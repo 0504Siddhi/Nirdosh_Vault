@@ -399,7 +399,7 @@ export default function Guidance() {
         conflict,
         key: `${conflict.fieldKey || conflict.field || index}-${index}`,
       }))
-      .filter((entry) => !guides[entry.key]);
+      .filter((entry: { conflict: any; key: string }) => !guides[entry.key]);
 
     if (missingGuideEntries.length === 0) {
       return;
@@ -666,8 +666,8 @@ export default function Guidance() {
 
                         <span
                           className={`font-bold px-2 py-1 rounded border ${item.type === 'outlier'
-                              ? 'bg-red-50 text-red-700 border-red-200'
-                              : 'bg-white text-navy-950 border-slate-200'
+                            ? 'bg-red-50 text-red-700 border-red-200'
+                            : 'bg-white text-navy-950 border-slate-200'
                             }`}
                         >
                           {item.value}
