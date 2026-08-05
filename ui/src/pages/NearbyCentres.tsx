@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import NeedOfflineHelp from '../components/NeedOfflineHelp';
 import { Link, useParams } from 'react-router-dom';
 import api from '../api/client';
 import {
   MapPin, Navigation, Search, Loader2, ExternalLink,
-  Building2, CreditCard, Scale, Landmark, ChevronDown
+  Building2, CreditCard, Scale, Landmark, ChevronDown, Compass
 } from 'lucide-react';
-import GoogleMapView from '../components/GoogleMapView';
+import LeafletMapView from '../components/LeafletMapView';
 
 interface Centre {
   id: string;
@@ -32,21 +33,24 @@ export default function NearbyCentres() {
   const [cities, setCities] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchMethod, setSearchMethod] = useState<'none' | 'geolocation' | 'city' | 'pin'>('city');
-  const [selectedCity, setSelectedCity] = useState('Pune'); // Default pre-selected
+  const [selectedCity, setSelectedCity] = useState('Pune');
   const [pinInput, setPinInput] = useState('');
   const [geoError, setGeoError] = useState('');
   const [geoLoading, setGeoLoading] = useState(false);
   const [selectedCentreId, setSelectedCentreId] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>({ lat: 18.5314, lng: 73.8446 });
+  const lastLiveFetchRef = useRef(0);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [queryLabel, setQueryLabel] = useState('');
 
+  const CSC_LOCATOR_URL = 'https://findmycsc.nic.in/';
+  const AAPLE_SARKAR_URL = 'https://aaplesarkar.mahaonline.gov.in/en/CommonForm/SewaKendraDetails';
 
-  // Load available cities and default Pune centres on mount so screen is never empty
   useEffect(() => {
     api.get('/centres').then(res => {
       setCities(res.data.cities || []);
     }).catch(console.error);
 
-    // Auto-load Pune centres instantly on page load for a flawless demo
     searchByCity('Pune');
   }, []);
 
@@ -55,13 +59,16 @@ export default function NearbyCentres() {
     setLoading(true);
     setSearchMethod('city');
     setSelectedCentreId(null);
+    setQueryLabel(city);
     try {
       const { data } = await api.get(`/centres?city=${encodeURIComponent(city)}`);
       setCentres(data.centres || []);
     } catch (err) {
       console.error(err);
+      setCentres([]);
     } finally {
       setLoading(false);
+      setHasSearched(true);
     }
   };
 
@@ -70,13 +77,16 @@ export default function NearbyCentres() {
     setLoading(true);
     setSearchMethod('pin');
     setSelectedCentreId(null);
+    setQueryLabel(`PIN ${pinInput}`);
     try {
       const { data } = await api.get(`/centres?pin=${encodeURIComponent(pinInput)}`);
       setCentres(data.centres || []);
     } catch (err) {
       console.error(err);
+      setCentres([]);
     } finally {
       setLoading(false);
+      setHasSearched(true);
     }
   };
 
@@ -87,7 +97,6 @@ export default function NearbyCentres() {
     setSelectedCentreId(null);
 
     if (!navigator.geolocation) {
-      // Graceful fallback for local dev environments without HTTPS geolocation
       setUserLocation({ lat: 18.5314, lng: 73.8446 });
       searchByCity('Pune');
       setGeoLoading(false);
@@ -99,24 +108,38 @@ export default function NearbyCentres() {
         const { latitude, longitude } = position.coords;
         setUserLocation({ lat: latitude, lng: longitude });
         setLoading(true);
+        setQueryLabel('your current location');
         try {
           const { data } = await api.get(`/centres?lat=${latitude}&lng=${longitude}`);
           setCentres(data.centres || []);
         } catch (err) {
           console.error(err);
+          setCentres([]);
         } finally {
           setLoading(false);
+          setHasSearched(true);
           setGeoLoading(false);
         }
       },
       () => {
-        // If GPS is blocked/denied by browser, fall back seamlessly to Pune so judges never see an error
         setUserLocation({ lat: 18.5314, lng: 73.8446 });
         searchByCity('Pune');
         setGeoLoading(false);
       },
-      { timeout: 5000, enableHighAccuracy: false }
+      { timeout: 10000, enableHighAccuracy: true }
     );
+  };
+
+  const handleLiveLocationUpdate = (lat: number, lng: number) => {
+    setUserLocation({ lat, lng });
+    const now = Date.now();
+    if (now - lastLiveFetchRef.current < 10000) return;
+    lastLiveFetchRef.current = now;
+    setSearchMethod('geolocation');
+    setQueryLabel('your current location');
+    api.get(`/centres?lat=${lat}&lng=${lng}`)
+      .then(({ data }) => setCentres((data.centres || []).slice().sort((a: any, b: any) => (a.distance ?? Infinity) - (b.distance ?? Infinity))))
+      .catch(console.error);
   };
 
   const getTypeIcon = (type: string) => {
@@ -144,17 +167,16 @@ export default function NearbyCentres() {
       <div className="mb-8">
         {activeAnalysisId && (
           <Link to={`/guidance/${activeAnalysisId}`} className="text-saffron-500 text-sm font-medium hover:underline mb-4 inline-block">
-            ← Back to Correction Kit
+            ? Back to Correction Kit
           </Link>
         )}
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-green-500 bg-green-500/10 border border-green-500/20 mb-3 block">
           <MapPin size={12} /> Nearby Centres
         </div>
         <h2 className="text-3xl font-bold mb-2">Find Assistance Nearby</h2>
-        <p className="text-slate-500">Locate the nearest Aadhaar Seva Kendra, PAN centre, SDM office, or Common Service Centre on Google Maps to get help with document corrections.</p>
+        <p className="text-slate-500">Locate the nearest Aadhaar Seva Kendra, PAN centre, SDM office, or Common Service Centre to get help with document corrections.</p>
       </div>
 
-      {/* Search Options */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         <button
           onClick={searchByLocation}
@@ -207,22 +229,60 @@ export default function NearbyCentres() {
 
       {geoError && (
         <div className="p-3.5 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm mb-6">
-          📍 {geoError}. Showing default region centres.
+          ?? {geoError}. Showing default region centres.
         </div>
       )}
 
-      {/* Interactive Map View */}
-      <GoogleMapView
+      <LeafletMapView
         centres={centres}
         selectedCentreId={selectedCentreId}
         onSelectCentre={(id) => setSelectedCentreId(id)}
         userLocation={userLocation}
         activeCity={selectedCity}
+        onLiveLocationUpdate={handleLiveLocationUpdate}
       />
+      <div className="mt-6">
+        <NeedOfflineHelp />
+      </div>
 
       {loading && (
         <div className="flex items-center justify-center py-16 text-slate-400">
           <Loader2 size={28} className="animate-spin mr-3" /> Searching nearby centres...
+        </div>
+      )}
+
+      {!loading && hasSearched && centres.length === 0 && (
+        <div className="card p-8 text-center border-slate-200">
+          <div className="w-14 h-14 rounded-2xl bg-saffron-500/10 flex items-center justify-center mx-auto mb-4">
+            <Compass size={26} className="text-saffron-500" />
+          </div>
+          <h3 className="font-bold text-lg mb-2">
+            No Verified Centre Found{queryLabel ? ` Near ${queryLabel}` : ''}
+          </h3>
+          <p className="text-sm text-slate-500 max-w-md mx-auto mb-6">
+            We don't have a confirmed assistance centre in our records for this area yet.
+            Use the official Government of India CSC Locator to find the nearest
+            Common Service Centre instead.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <a href={CSC_LOCATOR_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-primary px-5 py-2.5 text-sm inline-flex items-center gap-2"
+            >
+              <MapPin size={16} /> Open Official CSC Locator <ExternalLink size={14} />
+            </a>
+            <a href={AAPLE_SARKAR_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn-secondary px-5 py-2.5 text-sm inline-flex items-center gap-2"
+            >
+              <MapPin size={16} /> Maharashtra Aaple Sarkar Sewa Kendra <ExternalLink size={14} />
+            </a>
+          </div>
+          <p className="text-[11px] text-slate-400 mt-3">
+            National centres via findmycsc.nic.in, or Maharashtra state Sewa Kendra via aaplesarkar.mahaonline.gov.in.
+          </p>
         </div>
       )}
 
@@ -274,19 +334,18 @@ export default function NearbyCentres() {
                         </span>
                         {centre.timing && (
                           <span className="badge bg-slate-50 dark:bg-navy-900 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-white/10 text-[10px]">
-                            🕐 {centre.timing}
+                            ?? {centre.timing}
                           </span>
                         )}
                         {centre.phone && (
                           <span className="badge bg-slate-50 dark:bg-navy-900 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-white/10 text-[10px]">
-                            📞 {centre.phone}
+                            ?? {centre.phone}
                           </span>
                         )}
                       </div>
 
                       <div className="mt-4 flex gap-2">
-                        <a
-                          href={centre.mapsUrl}
+                        <a href={centre.mapsUrl}
                           target="_blank"
                           rel="noopener noreferrer"
                           onClick={(e) => e.stopPropagation()}
@@ -306,12 +365,3 @@ export default function NearbyCentres() {
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
