@@ -3,9 +3,11 @@ import { authenticate, AuthRequest } from '../middleware/auth';
 import { DocumentStore, AnalysisStore } from '../models/store';
 import { runConsensusEngine } from '../services/consensusService';
 import {
-  buildCorrectionKit,
   generateGuidance,
 } from '../services/guidanceService';
+import {
+  buildHybridCorrectionKit,
+} from '../rag/hybridGuidanceService';
 import { generateChecklist } from '../services/checklistService';
 import { AuditService } from '../services/auditService';
 import logger from '../services/logger';
@@ -678,10 +680,10 @@ router.post(
 router.post(
   '/:id/correction-kit',
   authenticate,
-  (
+  async (
     req: AuthRequest,
     res: Response
-  ): void => {
+  ): Promise<void> => {
     if (!req.user) {
       res.status(401).json({
         error: 'Unauthorized',
@@ -779,32 +781,69 @@ router.post(
       return;
     }
 
-    const kit =
-      buildCorrectionKit(
-        analysis._id,
-        result,
-        document?.docType
+    try {
+      const kit =
+        await buildHybridCorrectionKit(
+          analysis._id,
+          result,
+          document?.docType
+        );
+
+      AuditService.log(
+        req.user.id,
+        'correction_kit.requested',
+        {
+          analysisId: analysis._id,
+          fieldKey,
+          documentId:
+            documentId ?? null,
+          documentType:
+            document?.docType ?? null,
+          guideStatus:
+            kit.guide_status,
+          ragEnabled:
+            Boolean(
+              (
+                kit as {
+                  rag_metadata?: {
+                    enabled?: boolean;
+                  };
+                }
+              ).rag_metadata?.enabled
+            ),
+        },
+        req
       );
 
-    AuditService.log(
-      req.user.id,
-      'correction_kit.requested',
-      {
-        analysisId: analysis._id,
-        fieldKey,
-        documentId,
-        guideStatus:
-          kit.guide_status,
-      },
-      req
-    );
+      res.status(200).json(
+        sanitizeCorrectionKit(
+          kit,
+          fieldKey
+        )
+      );
+    } catch (error: unknown) {
+      logger.error(
+        'Correction Kit generation failed',
+        {
+          analysisId:
+            analysis._id,
+          fieldKey,
+          documentId:
+            documentId ?? null,
+          documentType:
+            document?.docType ?? null,
+          error:
+            error instanceof Error
+              ? error.message
+              : String(error),
+        }
+      );
 
-    res.json(
-      sanitizeCorrectionKit(
-        kit,
-        fieldKey
-      )
-    );
+      res.status(500).json({
+        error:
+          'Correction Kit generation failed',
+      });
+    }
   }
 );
 
