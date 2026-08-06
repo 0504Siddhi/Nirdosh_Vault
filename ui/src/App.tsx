@@ -9,6 +9,7 @@ import Dashboard from './pages/Dashboard';
 import Upload from './pages/Upload';
 import Report from './pages/Report';
 import Guidance from './pages/Guidance';
+import SchemeFinder from './pages/SchemeFinder';
 import NearbyCentres from './pages/NearbyCentres';
 import Settings from './pages/Settings';
 import Navbar from './components/Navbar';
@@ -47,6 +48,7 @@ function App() {
           <Route path="/report/:id" element={<ProtectedRoute><Report /></ProtectedRoute>} />
           <Route path="/report" element={<ProtectedRoute><Report /></ProtectedRoute>} />
           <Route path="/guidance/:id" element={<ProtectedRoute><Guidance /></ProtectedRoute>} />
+          <Route path="/schemes" element={<ProtectedRoute><SchemeFinder /></ProtectedRoute>} />
           <Route path="/centres" element={<ProtectedRoute><NearbyCentres /></ProtectedRoute>} />
           <Route path="/centres/:analysisId" element={<ProtectedRoute><NearbyCentres /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />

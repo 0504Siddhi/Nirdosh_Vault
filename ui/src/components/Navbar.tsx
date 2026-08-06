@@ -16,6 +16,7 @@ export default function Navbar() {
     { to: '/dashboard', label: 'Dashboard' },
     { to: '/upload', label: 'Upload Docs' },
     { to: '/report', label: 'Report' },
+    { to: '/schemes', label: 'Schemes' },
     { to: '/centres', label: 'Centres' },
   ];
 
