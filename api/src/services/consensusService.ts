@@ -22,6 +22,7 @@ interface Entry {
   value: string;
   normalized: string;
   incomplete: boolean;
+  confidence: number | null;
 }
 
 export const FIELD_WEIGHTS: Record<string, number> = {};
@@ -157,6 +158,7 @@ export interface AuditReportResponse {
   summary: ConsensusSummary;
   fieldResults: IFieldResult[];
   documentSpecificFields: DocumentSpecificField[];
+  allComparableFieldResults?: IFieldResult[];
 }
 
 export function runConsensusEngine(
@@ -231,17 +233,19 @@ export function runConsensusEngine(
           field.incomplete ||
           normalizedResult.incomplete
         ),
+        confidence:
+          typeof field.confidence === 'number' && Number.isFinite(field.confidence)
+            ? Math.max(0, Math.min(1, field.confidence))
+            : null,
       });
 
       byField.set(key, list);
     }
   }
 
-  const comparableFieldResults: IFieldResult[] =
-    [];
-
-  const documentSpecificFields:
-    DocumentSpecificField[] = [];
+  const comparableFieldResults: IFieldResult[] = [];
+  const allComparableFieldResults: IFieldResult[] = [];
+  const documentSpecificFields: DocumentSpecificField[] = [];
 
   // 2. Readiness router and consensus matrix
   for (const [fieldKey, entries] of byField) {
@@ -251,6 +255,11 @@ export function runConsensusEngine(
         /\b\w/g,
         (character) => character.toUpperCase()
       );
+
+    const documentsContainingField = new Set(entries.map((entry) => entry.docId)).size;
+    const validConfs = entries.map((e) => e.confidence).filter((c): c is number => c !== null);
+    const avgConfidence = validConfs.length > 0 ? validConfs.reduce((s, c) => s + c, 0) / validConfs.length : null;
+    const contributingDocumentTypes = Array.from(new Set(entries.map((e) => e.docType)));
 
     /*
      * Compare a field only when at least two different documents
@@ -266,6 +275,25 @@ export function runConsensusEngine(
           docType: entry.docType,
           value: entry.value,
         });
+
+        const singleDocResult: IFieldResult = {
+          fieldKey,
+          label,
+          status: 'consistent',
+          confidence: 'review',
+          confidenceLabel: 'Review - single document evidence',
+          scenario: 'exact_normalized_match',
+          consensusValue: entry.value,
+          supportingDocs: [{ docId: entry.docId, docTitle: entry.docTitle, value: entry.value, docType: entry.docType }],
+          explanation: 'Field present in single uploaded document; cross-document peer consensus unavailable.',
+          needsManualVerification: true,
+          documentsContainingField: 1,
+          supportingDocumentTypes: [entry.docType],
+          contributingDocumentTypes: [entry.docType],
+          averageExtractionConfidence: entry.confidence,
+          peerEvidenceAvailable: false,
+        };
+        allComparableFieldResults.push(singleDocResult);
       }
 
       continue;
@@ -300,6 +328,8 @@ export function runConsensusEngine(
       continue;
     }
 
+    const supportingDocumentTypes = Array.from(new Set(largest.map((e) => e.docType)));
+
     const hasYearOnly =
       fieldKey === 'date_of_birth' &&
       entries.some(
@@ -319,7 +349,12 @@ export function runConsensusEngine(
       hasYearOnly &&
       birthYears.size === 1
     ) {
-      comparableFieldResults.push({
+      const fullDateEntries = entries.filter((e) => !e.incomplete);
+      const supportingTypesForYearOnly = Array.from(
+        new Set((fullDateEntries.length > 0 ? fullDateEntries : largest).map((e) => e.docType))
+      );
+
+      const res: IFieldResult = {
         fieldKey,
         label,
         status: 'possible_variant',
@@ -331,13 +366,19 @@ export function runConsensusEngine(
         explanation:
           'The year agrees, but at least one document contains only a year of birth. This is incomplete evidence, not an exact full-date match.',
         needsManualVerification: true,
-      });
+        documentsContainingField,
+        supportingDocumentTypes: supportingTypesForYearOnly,
+        contributingDocumentTypes,
+        averageExtractionConfidence: avgConfidence,
+      };
+      comparableFieldResults.push(res);
+      allComparableFieldResults.push(res);
 
       continue;
     }
 
     if (groups.length === 1) {
-      comparableFieldResults.push({
+      const res: IFieldResult = {
         fieldKey,
         label,
         status: 'consistent',
@@ -360,7 +401,13 @@ export function runConsensusEngine(
           'All comparable uploaded documents agree under deterministic normalization.',
 
         needsManualVerification: false,
-      });
+        documentsContainingField,
+        supportingDocumentTypes,
+        contributingDocumentTypes,
+        averageExtractionConfidence: avgConfidence,
+      };
+      comparableFieldResults.push(res);
+      allComparableFieldResults.push(res);
 
       continue;
     }
@@ -394,7 +441,7 @@ export function runConsensusEngine(
           ? 'possible_variant'
           : 'outlier_detected';
 
-      comparableFieldResults.push({
+      const res: IFieldResult = {
         fieldKey,
         label,
         status,
@@ -441,12 +488,18 @@ export function runConsensusEngine(
           'The differing document appears inconsistent based on uploaded evidence; this is not a legal determination.',
 
         needsManualVerification: true,
-      });
+        documentsContainingField,
+        supportingDocumentTypes,
+        contributingDocumentTypes,
+        averageExtractionConfidence: avgConfidence,
+      };
+      comparableFieldResults.push(res);
+      allComparableFieldResults.push(res);
 
       continue;
     }
 
-    comparableFieldResults.push({
+    const res: IFieldResult = {
       fieldKey,
       label,
       status: 'conflicting_evidence',
@@ -473,7 +526,13 @@ export function runConsensusEngine(
         'Evidence is split with no reliable majority. No correction target has been selected.',
 
       needsManualVerification: true,
-    });
+      documentsContainingField,
+      supportingDocumentTypes: [],
+      contributingDocumentTypes,
+      averageExtractionConfidence: avgConfidence,
+    };
+    comparableFieldResults.push(res);
+    allComparableFieldResults.push(res);
   }
 
   // 3. Summary generation
@@ -507,5 +566,7 @@ export function runConsensusEngine(
       comparableFieldResults,
 
     documentSpecificFields,
+
+    allComparableFieldResults,
   };
 }

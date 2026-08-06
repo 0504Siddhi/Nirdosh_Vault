@@ -2,6 +2,7 @@ import { Router, Response } from 'express';
 import { authenticate, AuthRequest } from '../middleware/auth';
 import { DocumentStore, AnalysisStore } from '../models/store';
 import { runConsensusEngine } from '../services/consensusService';
+import { calculateIdentityResolutionConfidence } from '../scoring/identityResolutionConfidenceService';
 import {
   generateGuidance,
 } from '../services/guidanceService';
@@ -475,6 +476,9 @@ function safeAnalysis(analysis: any): any {
         sanitizeDocumentSpecificField
       )
       : [],
+
+    identityResolutionConfidence:
+      analysis.identityResolutionConfidence,
   };
 }
 
@@ -611,6 +615,18 @@ router.post(
       const engineData =
         runConsensusEngine(userDocs);
 
+      const identityResolutionConfidence =
+        calculateIdentityResolutionConfidence({
+          fieldResults: engineData.fieldResults,
+          allComparableFieldResults:
+            engineData.allComparableFieldResults ??
+            engineData.fieldResults,
+          documentTypes: userDocs.map(
+            (document) => document.docType
+          ),
+          totalUploadedDocuments: userDocs.length,
+        });
+
       const guidance =
         await generateGuidance(
           engineData.fieldResults
@@ -642,6 +658,7 @@ router.post(
             engineData.documentSpecificFields,
           guidance,
           checklist,
+          identityResolutionConfidence,
         });
 
       AuditService.log(

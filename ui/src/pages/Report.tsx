@@ -3,6 +3,8 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../api/client';
 import { CheckCircle2, AlertTriangle, BookOpen, ClipboardList, ExternalLink } from 'lucide-react';
 import ExportPDF from '../components/ExportPDF';
+import IdentityResolutionConfidenceCard from '../components/IdentityResolutionConfidenceCard';
+import FieldResolutionBreakdown from '../components/FieldResolutionBreakdown';
 import type { ConsensusSummary, DocumentSpecificField, IFieldResult } from '../types/nirdosh-vault';
 
 interface ReportData {
@@ -11,6 +13,7 @@ interface ReportData {
   documentSpecificFields: DocumentSpecificField[];
   documentIds?: string[];
   checklist?: any[];
+  identityResolutionConfidence?: any;
   _id?: string;
 }
 
@@ -82,6 +85,8 @@ export default function Report() {
         </div>
       </div>
 
+      <IdentityResolutionConfidenceCard data={analysis.identityResolutionConfidence} />
+
       <div className={`card p-8 mb-8 border-2 ${hasIssues ? 'border-saffron-500/30 bg-saffron-500/5' : 'border-green-500/30 bg-green-500/5'}`}>
         <div className="flex flex-col sm:flex-row items-center gap-6">
           <div className={`w-16 h-16 shrink-0 rounded-full flex items-center justify-center text-3xl ${hasIssues ? 'bg-saffron-500/20 text-saffron-500' : 'bg-green-500/20 text-green-500'}`}>
@@ -112,6 +117,8 @@ export default function Report() {
 
       {activeTab === 'fields' && (
         <div className="space-y-4">
+          <FieldResolutionBreakdown fieldScores={analysis.identityResolutionConfidence?.fieldScores} />
+
           {fieldResults.map((res: any, idx: number) => (
             <FieldRow key={idx} result={res} />
           ))}

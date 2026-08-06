@@ -5,6 +5,7 @@
  */
 import { v4 as uuidv4 } from 'uuid';
 import type { ConsensusSummary, DocumentSpecificField } from '../types/nirdosh-vault';
+import type { IdentityResolutionConfidenceResult } from '../scoring/scoringTypes';
 
 export interface IUser {
   _id: string;
@@ -62,6 +63,7 @@ export interface IAnalysis {
   guidance: IGuidanceItem[];
   checklist: IChecklistItem[];
   healthScore?: number;
+  identityResolutionConfidence?: IdentityResolutionConfidenceResult;
   createdAt: Date;
 }
 
@@ -82,6 +84,11 @@ export interface IFieldResult {
   incompleteEntries?: { docId: string; docTitle: string; value: string }[];
   explanation: string;
   needsManualVerification: boolean;
+  documentsContainingField?: number;
+  supportingDocumentTypes?: string[];
+  contributingDocumentTypes?: string[];
+  averageExtractionConfidence?: number | null;
+  peerEvidenceAvailable?: boolean;
 }
 
 export interface IGuidanceItem {
