@@ -3,6 +3,7 @@ import { authenticate, AuthRequest } from '../middleware/auth';
 import { DocumentStore, AnalysisStore } from '../models/store';
 import { runConsensusEngine } from '../services/consensusService';
 import { calculateIdentityResolutionConfidence } from '../scoring/identityResolutionConfidenceService';
+import { buildIdentityTrustGraph } from '../services/identityTrustGraphService';
 import {
   generateGuidance,
 } from '../services/guidanceService';
@@ -453,6 +454,32 @@ function sanitizeDocumentSpecificField(
   };
 }
 
+function sanitizeIdentityTrustGraph(graph: any): any {
+  if (!graph || typeof graph !== 'object') {
+    return graph;
+  }
+
+  return {
+    ...graph,
+    documentNodes: Array.isArray(graph.documentNodes)
+      ? graph.documentNodes.map((node: any) => ({
+          ...node,
+          relations: Array.isArray(node.relations)
+            ? node.relations.map((rel: any) => ({
+                ...rel,
+                consensusValue: shouldMaskValue(rel.fieldKey, rel.consensusValue)
+                  ? maskIdentifier(rel.fieldKey, rel.consensusValue)
+                  : rel.consensusValue,
+                documentValue: shouldMaskValue(rel.fieldKey, rel.documentValue)
+                  ? maskIdentifier(rel.fieldKey, rel.documentValue)
+                  : rel.documentValue,
+              }))
+            : node.relations,
+        }))
+      : graph.documentNodes,
+  };
+}
+
 function safeAnalysis(analysis: any): any {
   if (!analysis) {
     return null;
@@ -479,6 +506,10 @@ function safeAnalysis(analysis: any): any {
 
     identityResolutionConfidence:
       analysis.identityResolutionConfidence,
+
+    identityTrustGraph: sanitizeIdentityTrustGraph(
+      analysis.identityTrustGraph
+    ),
   };
 }
 
@@ -627,6 +658,13 @@ router.post(
           totalUploadedDocuments: userDocs.length,
         });
 
+      const identityTrustGraph =
+        buildIdentityTrustGraph({
+          documents: userDocs,
+          fieldResults: engineData.fieldResults,
+          identityResolutionConfidence,
+        });
+
       const guidance =
         await generateGuidance(
           engineData.fieldResults
@@ -659,6 +697,7 @@ router.post(
           guidance,
           checklist,
           identityResolutionConfidence,
+          identityTrustGraph: identityTrustGraph ?? undefined,
         });
 
       AuditService.log(

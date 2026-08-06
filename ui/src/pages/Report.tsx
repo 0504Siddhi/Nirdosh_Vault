@@ -4,8 +4,10 @@ import api from '../api/client';
 import { CheckCircle2, AlertTriangle, BookOpen, ClipboardList, ExternalLink } from 'lucide-react';
 import ExportPDF from '../components/ExportPDF';
 import IdentityResolutionConfidenceCard from '../components/IdentityResolutionConfidenceCard';
+import IdentityTrustGraph from '../components/IdentityTrustGraph';
 import FieldResolutionBreakdown from '../components/FieldResolutionBreakdown';
 import type { ConsensusSummary, DocumentSpecificField, IFieldResult } from '../types/nirdosh-vault';
+import type { IdentityTrustGraphData } from '../types/identityTrustGraph';
 
 interface ReportData {
   summary: ConsensusSummary;
@@ -14,6 +16,7 @@ interface ReportData {
   documentIds?: string[];
   checklist?: any[];
   identityResolutionConfidence?: any;
+  identityTrustGraph?: IdentityTrustGraphData;
   _id?: string;
 }
 
@@ -86,6 +89,8 @@ export default function Report() {
       </div>
 
       <IdentityResolutionConfidenceCard data={analysis.identityResolutionConfidence} />
+
+      <IdentityTrustGraph graph={analysis.identityTrustGraph} />
 
       <div className={`card p-8 mb-8 border-2 ${hasIssues ? 'border-saffron-500/30 bg-saffron-500/5' : 'border-green-500/30 bg-green-500/5'}`}>
         <div className="flex flex-col sm:flex-row items-center gap-6">

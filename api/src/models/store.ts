@@ -6,6 +6,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import type { ConsensusSummary, DocumentSpecificField } from '../types/nirdosh-vault';
 import type { IdentityResolutionConfidenceResult } from '../scoring/scoringTypes';
+import type { IdentityTrustGraphData } from '../services/identityTrustGraphService';
 
 export interface IUser {
   _id: string;
@@ -64,6 +65,7 @@ export interface IAnalysis {
   checklist: IChecklistItem[];
   healthScore?: number;
   identityResolutionConfidence?: IdentityResolutionConfidenceResult;
+  identityTrustGraph?: IdentityTrustGraphData;
   createdAt: Date;
 }
 
