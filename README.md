@@ -1,229 +1,215 @@
-# Nirdosh Vault
+# 🛡️ Nirdosh Vault
 
-### AI-Powered Consensus Identity Engine for Pre-Submission Document Verification
+# AI-Powered Digital Identity Intelligence Platform
 
-> **Catch document inconsistencies before they become application rejections.**
+> **Verify Before You Apply**
 
-## 🔗 Quick Links
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript)
+![Node.js](https://img.shields.io/badge/Node.js-339933?logo=node.js)
+![Express](https://img.shields.io/badge/Express.js-black?logo=express)
+![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white)
+![Gemini](https://img.shields.io/badge/Google-Gemini_2.5_Flash-4285F4)
+![License](https://img.shields.io/badge/License-MIT-green)
 
-- video link = https://drive.google.com/file/d/1ZjJ3eOUXRpCELx1HveHuKusEWIsQ7XNV/view?usp=sharing
-- 🌐 **Live Demo:** https://nirdosh-vault-ui-mauve.vercel.app/
-- 💻 **GitHub Repository:** https://github.com/purvasatav/nirdosh-vaultapp
+## 🚀 Quick Links
 
----
+  Resource       Link
+  -------------- ---------------
+  Demo Video     ADD_LINK_HERE
+  Live Demo      ADD_LINK_HERE
+  GitHub         ADD_LINK_HERE
+
+## Core Capabilities
+
+-   Consensus Identity Engine
+-   Identity Resolution Confidence
+-   Visual Identity Evidence Graph
+-   Cross-Document Conflict Detection
+-   Evidence-Based Correction Guidance
+-   Government Scheme Discovery
+-   Nearby Assistance Centres
+-   Downloadable PDF Report
 
 ## Overview
 
-Nirdosh Vault is a GovTech AI prototype that helps citizens identify inconsistencies across identity documents **before** submitting applications for scholarships, welfare schemes, admissions, and public services.
+Nirdosh Vault is an AI-powered GovTech platform that helps citizens
+identify inconsistencies across identity documents before submitting
+applications.
 
-Instead of assuming that a single document is always correct, the platform compares information across multiple uploaded documents, builds a **Consensus Identity Profile**, highlights conflicts, and provides evidence-backed correction guidance.
+The platform extracts document fields, builds a Consensus Identity
+Profile, calculates an explainable Identity Resolution Confidence Score,
+visualizes relationships between uploaded documents, provides correction
+guidance, discovers potentially relevant government schemes, finds
+nearby assistance centres, and generates downloadable PDF reports.
 
----
+## Problem Statement
 
-# Problem Statement
+Millions of citizens submit multiple identity documents while applying for scholarships, welfare schemes, admissions, and public services.
 
-Millions of applications require multiple identity documents.
+Small inconsistencies such as differences in name, date of birth, address, or parent name often result in application delays, verification failures, and repeated correction cycles.
 
-A single mismatch in fields such as:
+Existing platforms securely store and exchange documents but generally validate them only after submission.
 
-- Name
-- Date of Birth
-- Address
-- Parent Name
-- Gender
+Nirdosh Vault introduces a pre-submission verification layer that helps citizens detect and resolve inconsistencies before they apply.
 
-can delay verification or require repeated corrections.
+## Features
 
-Current systems generally validate documents **after submission**, leaving citizens to discover problems only when applications are rejected or marked defective.
+-   AI-assisted document extraction (Gemini + PaddleOCR)
+-   Consensus Identity Engine
+-   Identity Resolution Confidence
+-   Visual Identity Evidence Graph
+-   Conflict Detection
+-   Evidence-Based Correction Guidance
+-   Government Scheme Discovery
+-   Nearby Assistance Centres
+-   PDF Verification Report
+-   Privacy-first processing
 
----
+## Workflow
 
-# Our Solution
-
-Nirdosh Vault performs intelligent cross-document verification before submission.
-
-The platform:
-
-- Extracts structured information from uploaded documents
-- Compares common fields
-- Builds a consensus profile
-- Detects conflicting values
-- Explains conflicts using evidence
-- Suggests the appropriate correction authority
-- Generates a downloadable verification report
-
----
-
-# Key Features
-
-- AI-assisted document extraction
-- Consensus Identity Engine
-- Cross-document validation
-- Conflict detection
-- Evidence-backed explanations
-- Correction guidance
-- Nearby assistance-centre discovery
-- PDF report generation
-- Privacy-first processing
-
----
-
-# How It Works
-
-```
-Upload Documents
-        │
-        ▼
-AI Extraction
-        │
-        ▼
+```text
+Upload Identity Documents
+          │
+          ▼
+AI Extraction (Gemini + PaddleOCR)
+          │
+          ▼
 Field Normalization
-        │
-        ▼
+          │
+          ▼
 Consensus Identity Engine
-        │
- ┌──────┴────────┐
- │               │
- ▼               ▼
-Consensus     Conflict
- │               │
- └──────┬────────┘
-        ▼
+          │
+          ▼
+Identity Resolution Confidence
+          │
+          ▼
+Visual Identity Evidence Graph
+          │
+          ▼
 Correction Guidance
-        │
-        ▼
-Verification Report
+      ┌───┴──────────┐
+      ▼              ▼
+Nearby Centres   Scheme Discovery
+      │              │
+      └──────┬───────┘
+             ▼
+Download PDF Report
 ```
 
----
+## 🏗️ Architecture Overview
 
-# Technology Stack
+| Component | Implementation |
+|-----------|----------------|
+| **Document Upload** | Multi-document upload with PDF and image support |
+| **Extraction Pipeline** | Google Gemini 2.5 Flash with PaddleOCR fallback |
+| **Normalization Layer** | Deterministic field normalization |
+| **Consensus Engine** | Cross-document identity comparison |
+| **Identity Resolution Confidence** | Explainable peer-evidence scoring |
+| **Identity Evidence Graph** | Interactive visualization of document relationships |
+| **Correction Guidance** | Evidence-backed advisory guidance |
+| **Scheme Discovery** | Preliminary government scheme matching |
+| **Nearby Centres** | Assistance centre locator |
+| **Report Generation** | Downloadable PDF verification report |
 
-| **Layer** | **Technology** |
-|------------|----------------|
-| **Frontend** | React · TypeScript · Vite · Tailwind CSS · React Router |
-| **Backend** | Node.js · Express.js · TypeScript · RESTful APIs |
-| **AI Model** | Google Gemini 2.5 Flash (Document Field Extraction & Natural Language Explanations) |
-| **OCR Engine** | PaddleOCR (Python) |
-| **Document Processing** | PDF & Image Processing · OCR Pipeline · Field Extraction · Data Normalization |
-| **Identity Verification Engine** | Consensus Identity Engine · Cross-Document Field Comparison · Deterministic Validation Logic |
-| **Correction Guidance Engine** | Rule-Based Correction Guidance · Authority Mapping · Evidence-Based Recommendations |
-| **Authentication** | JSON Web Tokens (JWT) · bcrypt |
-| **Security** | Helmet · CORS · Environment Variables |
-| **Logging & Monitoring** | Winston · Morgan |
-| **Deployment** | Vercel (Frontend) · Render (Backend) · Docker |
-| **Version Control** | Git · GitHub |
-| **Languages** | TypeScript · HTML · Python · CSS · JavaScript |
 
----
+# 🛠️ Technology Stack
 
-# Why Our Approach Is Different
+| Layer | Technologies | Purpose |
+|-------|--------------|---------|
+| **Frontend** | React 19, TypeScript, Vite, Tailwind CSS, React Router | Responsive user interface and client-side routing |
+| **Backend** | Node.js, Express.js, TypeScript | REST APIs, business logic, authentication, document analysis pipeline |
+| **AI & LLM** | Google Gemini 2.5 Flash | Intelligent document field extraction and natural language explanations |
+| **OCR Engine** | PaddleOCR (Python) | Optical Character Recognition with fallback extraction |
+| **Document Processing** | PDF Processing, Image Processing, Field Normalization | Pre-processing, parsing, and structured document analysis |
+| **Identity Intelligence Engine** | Consensus Identity Engine, Deterministic Validation Logic | Cross-document comparison, consensus generation, conflict detection |
+| **Confidence Engine** | Identity Resolution Confidence Algorithm | Explainable peer-evidence based identity consistency scoring |
+| **Visualization** | Visual Identity Evidence Graph | Interactive visualization of document relationships and evidence |
+| **Government Services** | Rule-Based Scheme Discovery, Nearby Assistance Centre Finder | Preliminary scheme discovery and citizen assistance |
+| **Authentication** | JSON Web Tokens (JWT), bcrypt | Secure user authentication and password hashing |
+| **Security** | Helmet, CORS, Environment Variables | API security and secure configuration management |
+| **Maps & Location** | Google Maps Platform | Nearby Aadhaar, CSC, and Maha e-Seva centre discovery |
+| **Logging & Monitoring** | Winston, Morgan | Structured logging and request monitoring |
+| **Database** | MongoDB *(Prototype Support)* | User and application data storage |
+| **Deployment** | Vercel (Frontend), Render (Backend), Docker | Application deployment and containerization |
+| **Version Control** | Git, GitHub | Source code management and collaboration |
+| **Languages** | TypeScript, JavaScript, Python, HTML5, CSS3 | Full-stack application development |
 
-Unlike systems that depend on one "master" document, Nirdosh Vault compares all uploaded documents to identify the most consistent identity information.
+## Responsible AI
 
-The platform never assumes AI is always correct.
+- AI assists document extraction and natural language explanations.
+- Cross-document comparison follows deterministic rules.
+- No uploaded document is treated as absolute truth.
+- Ambiguous cases are flagged for manual review.
+- Reports provide advisory guidance only.
+- Final verification remains the responsibility of the relevant government authority.
 
-AI assists with extraction and explanations, while consistency decisions are based on deterministic comparison rules. Ambiguous cases are flagged for manual verification.
+  ## Why Nirdosh Vault?
 
----
+Unlike traditional verification systems,
 
-# Prototype Workflow
+• no single document is treated as the master record
 
-1. Upload documents
-2. Extract fields
-3. Compare common attributes
-4. Build consensus profile
-5. Detect conflicts
-6. Recommend correction path
-7. Export report
+• identity consistency is established through peer evidence
 
----
+• every confidence score is explainable
 
-# Real-World Impact
+• document relationships are visualized
 
-Nirdosh Vault aims to:
+• correction guidance is evidence-backed
 
-- Reduce preventable application rejections
-- Save citizens time and repeated visits
-- Assist CSC and service operators
-- Improve confidence before submission
-- Simplify document verification workflows
+• scheme discovery remains transparent and advisory
 
----
+## Local Setup
 
-# Screens
+Backend
 
-- Landing Page
-- Dashboard
-- Upload Documents
-- Analysis Report
-- Conflict Details
-- Nearby Assistance Centres
-
----
-
-# Responsible AI
-
-- AI supports extraction only.
-- Final consistency analysis follows deterministic rules.
-- No document is treated as absolute truth.
-- Ambiguous cases require human verification.
-- The system provides advisory guidance only.
-
----
-
-# Local Setup
-
-## Backend
-
-```bash
+``` bash
 cd api
 npm install
 pip install -r requirements.txt
 npm run dev
 ```
 
-## Frontend
+Frontend
 
-```bash
+``` bash
 cd ui
 npm install
 npm run dev
 ```
 
----
+## Environment Variables
 
-# Environment Variables
-
-```env
+``` env
 GEMINI_API_KEY=
 GEMINI_MODEL=gemini-2.5-flash
 JWT_SECRET=
 GOOGLE_MAPS_API_KEY=
 ```
 
----
+## Roadmap
 
-# Future Roadmap
+- DigiLocker Integration
+- Multilingual Support
+- Organization Dashboard
+- Mobile Application
+- Additional Government Schemes
+- More Identity Document Types
+- Offline Verification Support
+- Citizen Verification History
 
-- DigiLocker integration
-- Multilingual support
-- Expanded correction guidance
-- Additional document types
-- Organization dashboard
+## Team
 
----
+Team Nexovate
 
-# Team
+-   Siddhi Jadhav
+-   Purva Satav
+-   Saumya Raut
 
-**Team:** Nexovate
+## Disclaimer
 
-**Project:** Nirdosh Vault
-
----
-
-# Disclaimer
-
-This repository contains a hackathon prototype developed for innovation and research purposes.
-
-Nirdosh Vault is not affiliated with UIDAI, DigiLocker, CSC, Maha e-Seva, NSP, or any government authority. The platform provides advisory document consistency analysis and does not replace official verification procedures.
+Nirdosh Vault is a hackathon prototype. It is not affiliated with UIDAI,
+DigiLocker, CSC, Maha e-Seva, myScheme, NSP, or any Government
+authority. It provides advisory cross-document consistency analysis and
+preliminary scheme discovery only.
