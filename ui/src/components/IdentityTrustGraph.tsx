@@ -15,7 +15,7 @@ function getEvidenceStrengthMessage(docCount: number): string {
     return 'This visualization is based on a single uploaded document. Cross-document consistency cannot yet be established. Upload additional independent identity documents for stronger peer evidence.';
   }
   if (docCount === 2) {
-    return 'This visualization is based on 2 uploaded document types. The Identity Resolution Confidence score is intentionally evidence-capped because only two independent sources are available. Uploading additional independent identity documents can strengthen peer evidence.';
+    return 'Based on 2 independent document types. Confidence is evidence-capped because only two sources are available. Additional documents can strengthen cross-document evidence.';
   }
   if (docCount === 3) {
     return 'This visualization is based on 3 uploaded document types, providing stronger cross-document peer evidence for consistency analysis.';
@@ -46,14 +46,14 @@ function getStatusColorHex(status: DocumentDisplayStatus | RelationStatus): stri
 function getStatusBadgeClass(status: RelationStatus): string {
   switch (status) {
     case 'agreement':
-      return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30';
+      return 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/30';
     case 'expected_variation':
-      return 'bg-amber-500/10 text-amber-400 border-amber-500/30';
+      return 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/30';
     case 'conflict':
-      return 'bg-rose-500/10 text-rose-400 border-rose-500/30';
+      return 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/30';
     case 'insufficient_evidence':
     default:
-      return 'bg-slate-500/10 text-slate-400 border-slate-500/30';
+      return 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-500/10 dark:text-slate-400 dark:border-slate-500/30';
   }
 }
 
@@ -95,9 +95,14 @@ export const IdentityTrustGraph: React.FC<Props> = ({ graph }) => {
   const centerY = 160;
   const radius = Math.min(220, Math.max(150, 100 + totalDocs * 25));
 
-  // Compute node positions around center
+  // Compute node positions around center (horizontal placement for 2 docs)
   const nodePositions = graph.documentNodes.map((node, index) => {
-    const angle = (2 * Math.PI * index) / totalDocs - Math.PI / 2;
+    let angle: number;
+    if (totalDocs === 2) {
+      angle = index === 0 ? Math.PI : 0;
+    } else {
+      angle = (2 * Math.PI * index) / totalDocs - Math.PI / 2;
+    }
     const x = centerX + radius * Math.cos(angle);
     const y = centerY + radius * Math.sin(angle);
     return { node, x, y };
@@ -106,44 +111,44 @@ export const IdentityTrustGraph: React.FC<Props> = ({ graph }) => {
   const centralColor = getStatusColorHex(graph.centralNode.displayStatus);
 
   return (
-    <section className="mb-8 rounded-xl border border-slate-800 bg-slate-900 p-6 text-white shadow-xl">
+    <section className="mb-8 rounded-xl border border-slate-200 bg-white p-6 text-slate-900 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-white dark:shadow-xl">
       {/* Header */}
-      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4 dark:border-slate-800">
         <div className="flex items-center gap-3">
-          <div className="rounded-xl border border-indigo-500/20 bg-indigo-500/10 p-3 text-indigo-400">
+          <div className="rounded-xl border border-indigo-500/20 bg-indigo-500/10 p-3 text-indigo-600 dark:text-indigo-400">
             <ShieldCheck className="h-7 w-7" />
           </div>
           <div>
-            <h2 className="text-xl font-bold tracking-wide text-white">
+            <h2 className="text-xl font-bold tracking-wide text-slate-900 dark:text-white">
               Visual Identity Evidence Graph
             </h2>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
               Document-level evidence relations derived strictly from consensus rules
             </p>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-800 bg-slate-950/60 px-3 py-1 text-xs text-slate-300">
-            <FileText className="h-3.5 w-3.5 text-indigo-400" />
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs text-slate-700 dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-300">
+            <FileText className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
             {totalDocs} Uploaded {totalDocs === 1 ? 'Document' : 'Documents'}
           </span>
         </div>
       </div>
 
       {/* Evidence Strength Info Note */}
-      <div className="mb-6 flex items-start gap-2.5 rounded-lg border border-blue-500/20 bg-blue-500/5 p-3.5 text-xs text-blue-300">
-        <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-400" />
+      <div className="mb-6 flex items-start gap-2.5 rounded-lg border border-blue-500/30 bg-blue-50 p-3.5 text-xs text-blue-900 dark:border-blue-500/20 dark:bg-blue-500/5 dark:text-blue-300">
+        <Info className="mt-0.5 h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" />
         <div>
-          <span className="font-bold text-white block mb-0.5">Evidence Strength</span>
-          <p className="leading-relaxed text-blue-200/90">
+          <span className="font-bold text-slate-900 dark:text-white block mb-0.5">Evidence Strength</span>
+          <p className="leading-relaxed text-blue-800 dark:text-blue-200/90">
             {getEvidenceStrengthMessage(graph.summary?.totalDocuments || totalDocs)}
           </p>
         </div>
       </div>
 
       {/* SVG Canvas */}
-      <div className="relative mb-6 rounded-xl border border-slate-800/80 bg-slate-950/70 p-4">
+      <div className="relative mb-6 rounded-xl border border-slate-200 bg-slate-50/70 p-4 dark:border-slate-800/80 dark:bg-slate-950/70">
         <svg
           viewBox="0 0 800 320"
           className="w-full h-auto max-h-[340px] overflow-visible"
@@ -183,7 +188,7 @@ export const IdentityTrustGraph: React.FC<Props> = ({ graph }) => {
               cx={centerX}
               cy={centerY}
               r={46}
-              fill="#0f172a"
+              className="fill-white dark:fill-slate-900"
               stroke={centralColor}
               strokeWidth={3}
             />
@@ -198,7 +203,7 @@ export const IdentityTrustGraph: React.FC<Props> = ({ graph }) => {
               x={centerX}
               y={centerY - 6}
               textAnchor="middle"
-              fill="#f8fafc"
+              className="fill-slate-900 dark:fill-slate-100"
               fontSize={11}
               fontWeight="bold"
             >
@@ -208,10 +213,10 @@ export const IdentityTrustGraph: React.FC<Props> = ({ graph }) => {
               x={centerX}
               y={centerY + 10}
               textAnchor="middle"
-              fill="#94a3b8"
+              className="fill-slate-500 dark:fill-slate-400"
               fontSize={9}
             >
-              Identity Anchor
+              Cross-document evidence
             </text>
           </g>
 
@@ -231,7 +236,7 @@ export const IdentityTrustGraph: React.FC<Props> = ({ graph }) => {
                   <circle
                     r={36}
                     fill="none"
-                    stroke="#ffffff"
+                    className="stroke-slate-900 dark:stroke-white"
                     strokeWidth={2}
                     strokeDasharray="4 3"
                     opacity={0.8}
@@ -239,7 +244,7 @@ export const IdentityTrustGraph: React.FC<Props> = ({ graph }) => {
                 )}
                 <circle
                   r={30}
-                  fill="#1e293b"
+                  className="fill-white dark:fill-slate-800"
                   stroke={nodeColor}
                   strokeWidth={isSelected ? 3 : 2}
                 />
@@ -252,7 +257,7 @@ export const IdentityTrustGraph: React.FC<Props> = ({ graph }) => {
                   x={0}
                   y={-2}
                   textAnchor="middle"
-                  fill="#ffffff"
+                  className="fill-slate-900 dark:fill-white"
                   fontSize={10}
                   fontWeight="bold"
                 >
@@ -262,7 +267,7 @@ export const IdentityTrustGraph: React.FC<Props> = ({ graph }) => {
                   x={0}
                   y={10}
                   textAnchor="middle"
-                  fill="#94a3b8"
+                  className="fill-slate-500 dark:fill-slate-400"
                   fontSize={8}
                 >
                   {node.relations.length} {node.relations.length === 1 ? 'relation' : 'relations'}
@@ -271,7 +276,7 @@ export const IdentityTrustGraph: React.FC<Props> = ({ graph }) => {
                   x={0}
                   y={44}
                   textAnchor="middle"
-                  fill="#cbd5e1"
+                  className="fill-slate-700 dark:fill-slate-300"
                   fontSize={10}
                   fontWeight="semibold"
                 >
@@ -283,54 +288,54 @@ export const IdentityTrustGraph: React.FC<Props> = ({ graph }) => {
         </svg>
 
         {/* Status Legend */}
-        <div className="mt-3 flex flex-wrap items-center justify-center gap-4 border-t border-slate-800/80 pt-3 text-xs">
+        <div className="mt-3 flex flex-wrap items-center justify-center gap-4 border-t border-slate-200 dark:border-slate-800/80 pt-3 text-xs">
           <div className="flex items-center gap-1.5">
             <span className="h-3 w-3 rounded-full bg-emerald-500" />
-            <span className="text-slate-300">Agreement</span>
+            <span className="text-slate-700 dark:text-slate-300">Agreement</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="h-3 w-3 rounded-full bg-amber-500" />
-            <span className="text-slate-300">Expected Variation / Review</span>
+            <span className="text-slate-700 dark:text-slate-300">Expected Variation / Review</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="h-3 w-3 rounded-full bg-rose-500" />
-            <span className="text-slate-300">Conflict Detected</span>
+            <span className="text-slate-700 dark:text-slate-300">Conflict Detected</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="h-3 w-3 rounded-full bg-slate-500" />
-            <span className="text-slate-300">Insufficient Evidence</span>
+            <span className="text-slate-700 dark:text-slate-300">Insufficient Evidence</span>
           </div>
         </div>
       </div>
 
-      {/* Selected Document Field Relations Panel */}
+      {/* Selected Document Field Evidence Relations Panel */}
       {selectedNode && (
-        <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-5">
-          <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800/80 pb-3">
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-5 dark:border-slate-800 dark:bg-slate-950/60">
+          <div className="mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-3 dark:border-slate-800/80">
             <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                Document Field Evidence Relations
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                FIELD EVIDENCE BY DOCUMENT
               </span>
-              <h3 className="text-lg font-bold text-white">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">
                 {selectedNode.title} ({formatDocTypeName(selectedNode.docType)})
               </h3>
             </div>
             <div className="flex flex-wrap gap-2 text-xs">
-              <span className="rounded-full bg-emerald-500/10 px-2.5 py-0.5 font-medium text-emerald-400 border border-emerald-500/20">
+              <span className="rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-0.5 font-medium dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20">
                 {selectedNode.summary.agreement} Agreement
               </span>
               {selectedNode.summary.expected_variation > 0 && (
-                <span className="rounded-full bg-amber-500/10 px-2.5 py-0.5 font-medium text-amber-400 border border-amber-500/20">
+                <span className="rounded-full bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-0.5 font-medium dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20">
                   {selectedNode.summary.expected_variation} Variation
                 </span>
               )}
               {selectedNode.summary.conflict > 0 && (
-                <span className="rounded-full bg-rose-500/10 px-2.5 py-0.5 font-medium text-rose-400 border border-rose-500/20">
+                <span className="rounded-full bg-rose-50 text-rose-700 border border-rose-200 px-2.5 py-0.5 font-medium dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/20">
                   {selectedNode.summary.conflict} Conflict
                 </span>
               )}
               {selectedNode.summary.insufficient_evidence > 0 && (
-                <span className="rounded-full bg-slate-500/10 px-2.5 py-0.5 font-medium text-slate-400 border border-slate-500/20">
+                <span className="rounded-full bg-slate-100 text-slate-700 border border-slate-200 px-2.5 py-0.5 font-medium dark:bg-slate-500/10 dark:text-slate-400 dark:border-slate-500/20">
                   {selectedNode.summary.insufficient_evidence} Insufficient
                 </span>
               )}
@@ -338,7 +343,7 @@ export const IdentityTrustGraph: React.FC<Props> = ({ graph }) => {
           </div>
 
           {selectedNode.relations.length === 0 ? (
-            <p className="text-xs text-slate-400 italic">
+            <p className="text-xs text-slate-500 dark:text-slate-400 italic">
               No comparable identity field relations derived for this document.
             </p>
           ) : (
@@ -350,14 +355,14 @@ export const IdentityTrustGraph: React.FC<Props> = ({ graph }) => {
                 return (
                   <div
                     key={`${rel.fieldKey}-${idx}`}
-                    className="rounded-lg border border-slate-800/80 bg-slate-900/80 p-3.5 transition-colors hover:border-slate-700"
+                    className="rounded-lg border border-slate-200 bg-white p-3.5 transition-colors hover:border-slate-300 dark:border-slate-800/80 dark:bg-slate-900/80 dark:hover:border-slate-700"
                   >
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
                       <div>
-                        <span className="text-sm font-semibold text-white">
+                        <span className="text-sm font-semibold text-slate-900 dark:text-white">
                           {rel.label}
                         </span>
-                        <span className="ml-2 font-mono text-xs text-slate-500">
+                        <span className="ml-2 font-mono text-xs text-slate-500 dark:text-slate-400">
                           {rel.fieldKey}
                         </span>
                       </div>
@@ -369,27 +374,27 @@ export const IdentityTrustGraph: React.FC<Props> = ({ graph }) => {
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs mb-2">
-                      <div className="rounded bg-slate-950/60 p-2 border border-slate-800/60">
-                        <span className="text-slate-400 block font-medium">
+                      <div className="rounded bg-slate-50 p-2 border border-slate-200 dark:bg-slate-950/60 dark:border-slate-800/60">
+                        <span className="text-slate-500 dark:text-slate-400 block font-medium">
                           Document Value:
                         </span>
-                        <span className="text-slate-200 font-mono font-semibold truncate block mt-0.5">
+                        <span className="text-slate-800 dark:text-slate-200 font-mono font-semibold truncate block mt-0.5">
                           {rel.documentValue || 'Not available'}
                         </span>
                       </div>
 
-                      <div className="rounded bg-slate-950/60 p-2 border border-slate-800/60">
-                        <span className="text-slate-400 block font-medium">
+                      <div className="rounded bg-slate-50 p-2 border border-slate-200 dark:bg-slate-950/60 dark:border-slate-800/60">
+                        <span className="text-slate-500 dark:text-slate-400 block font-medium">
                           Consensus Value:
                         </span>
-                        <span className="text-indigo-300 font-mono font-semibold truncate block mt-0.5">
+                        <span className="text-indigo-600 dark:text-indigo-300 font-mono font-semibold truncate block mt-0.5">
                           {rel.consensusValue || 'No consensus formed'}
                         </span>
                       </div>
                     </div>
 
                     {rel.explanation && (
-                      <p className="text-xs text-slate-400 leading-relaxed bg-slate-950/30 p-2 rounded border border-slate-800/40">
+                      <p className="text-xs text-slate-600 leading-relaxed bg-slate-100 p-2 rounded border border-slate-200 dark:bg-slate-950/30 dark:text-slate-400 dark:border-slate-800/40">
                         {rel.explanation}
                       </p>
                     )}

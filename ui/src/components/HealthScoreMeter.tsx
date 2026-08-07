@@ -26,7 +26,7 @@ export default function HealthScoreMeter({ score }: HealthScoreProps) {
       <div className="relative shrink-0" style={{ width: 130, height: 130 }}>
         <svg width="130" height="130" viewBox="0 0 130 130">
           {/* Track */}
-          <circle cx="65" cy="65" r={radius} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="10" />
+          <circle cx="65" cy="65" r={radius} fill="none" stroke="currentColor" className="text-slate-200 dark:text-white/10" strokeWidth="10" />
           {/* Progress */}
           <circle
             cx="65" cy="65" r={radius}

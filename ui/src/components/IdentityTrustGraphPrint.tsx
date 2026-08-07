@@ -74,7 +74,12 @@ export const IdentityTrustGraphPrint: React.FC<Props> = ({ graph }) => {
   const radius = Math.min(180, Math.max(120, 80 + totalDocs * 20));
 
   const nodePositions = graph.documentNodes.map((node, index) => {
-    const angle = (2 * Math.PI * index) / totalDocs - Math.PI / 2;
+    let angle: number;
+    if (totalDocs === 2) {
+      angle = index === 0 ? Math.PI : 0;
+    } else {
+      angle = (2 * Math.PI * index) / totalDocs - Math.PI / 2;
+    }
     const x = centerX + radius * Math.cos(angle);
     const y = centerY + radius * Math.sin(angle);
     return { node, x, y };
@@ -143,7 +148,7 @@ export const IdentityTrustGraphPrint: React.FC<Props> = ({ graph }) => {
               fill="#64748b"
               fontSize={8}
             >
-              Identity Anchor
+              Cross-document evidence
             </text>
           </g>
 
