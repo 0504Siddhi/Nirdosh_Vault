@@ -1,4 +1,4 @@
-services:
+﻿services:
   - type: web
     name: nirdosh-vault-api
     runtime: docker
@@ -19,4 +19,3 @@ services:
         value: "3"
       - key: GEMINI_TIMEOUT_MS
         value: "45000"
-
