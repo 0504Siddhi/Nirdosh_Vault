@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 services:
+=======
+﻿services:
+>>>>>>> scheme-readiness-feature
   - type: web
     name: nirdosh-vault-api
     runtime: docker
@@ -19,4 +23,7 @@ services:
         value: "3"
       - key: GEMINI_TIMEOUT_MS
         value: "45000"
+<<<<<<< HEAD
 
+=======
+>>>>>>> scheme-readiness-feature
