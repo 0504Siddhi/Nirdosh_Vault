@@ -1,4 +1,4 @@
-﻿/**
+/**
  * SchemeFinder.tsx
  * ---------------------------------------------------------------------------
  * Scheme Discovery & Readiness module for Nirdosh Vault.
@@ -537,15 +537,18 @@ const CATEGORY_ICON: Record<SchemeCategory, string> = {
 
 function evidenceBadge(doc: VaultDocument, tier: DocTier): { text: string; cls: string } {
   if (doc.available && doc.evidence === 'no_relevant_conflict') {
-    return { text: 'Available · no relevant conflict detected', cls: 'border-emerald-300 text-emerald-600 dark:border-emerald-500/40 dark:text-emerald-400' };
+    return { text: 'Available · no relevant issue detected', cls: 'border-emerald-300 text-emerald-600 dark:border-emerald-500/40 dark:text-emerald-400' };
   }
   if (doc.available && doc.evidence === 'conflict_detected') {
-    return { text: 'Available · conflict detected', cls: 'border-rose-300 text-rose-500 dark:border-rose-500/40 dark:text-rose-400' };
+    return { text: 'Available · identity issue detected', cls: 'border-rose-300 text-rose-500 dark:border-rose-500/40 dark:text-rose-400' };
+  }
+  if (doc.available && doc.evidence === 'insufficient_evidence') {
+    return { text: 'Available · more evidence needed', cls: 'border-amber-300 text-amber-600 dark:border-amber-500/40 dark:text-amber-400' };
   }
   if (doc.available) {
-    return { text: 'Available · not evaluated', cls: 'border-slate-300 text-slate-500 dark:border-slate-600 dark:text-slate-400' };
+    return { text: 'Available', cls: 'border-slate-300 text-slate-600 dark:border-slate-600 dark:text-slate-400' };
   }
-  const missingText = tier === 'required' ? 'Missing' : 'Not provided';
+  const missingText = tier === 'required' ? 'Not verified yet' : 'Not provided';
   return { text: missingText, cls: 'border-slate-300 text-slate-400 dark:border-slate-600 dark:text-slate-500' };
 }
 
@@ -676,7 +679,7 @@ function SchemeCard({
             <span className="font-mono text-[10px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
               DOCUMENT READINESS — {info.availableRequiredCount} of {info.totalRequiredCount} required available
             </span>
-            <span className={`font-mono text-[11px] font-bold ${readinessColorCls}`}>{info.readiness}%</span>
+            <span className={`font-mono text-[11px] font-bold ${readinessColorCls}`}>{info.readiness}% Document Readiness</span>
           </div>
           <div className="flex flex-col gap-1.5">
             {info.requiredResolved.map((rd) => (
@@ -713,8 +716,7 @@ function SchemeCard({
           <div className="mt-2 flex items-start gap-1.5 rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-600 dark:bg-rose-500/10 dark:text-rose-400">
             <span>⚠</span>
             <span>
-              {info.identityIssues.length} identity issue{info.identityIssues.length === 1 ? '' : 's'} need
-              {info.identityIssues.length === 1 ? 's' : ''} attention.{' '}
+              An identity inconsistency was detected across your documents and should be reviewed before submission.{' '}
               <button
                 type="button"
                 className="font-semibold underline underline-offset-2"
@@ -738,15 +740,23 @@ function SchemeCard({
           </div>
         )}
 
-        <a
-          href={scheme.source.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-saffron-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-saffron-600"
-        >
-          <span>↗</span>
-          Verify on Official Portal ({scheme.source.department})
-        </a>
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
+          <div className="text-[10px] text-slate-400 dark:text-slate-500">
+            Scheme information source: <span className="font-medium text-slate-600 dark:text-slate-400">{scheme.source.department}</span>
+            {scheme.source.lastReviewed && (
+              <span> · Information reviewed: {scheme.source.lastReviewed}</span>
+            )}
+          </div>
+          <a
+            href={scheme.source.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-saffron-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-saffron-600"
+          >
+            <span>↗</span>
+            Verify on Official Portal
+          </a>
+        </div>
       </div>
     </div>
   );
@@ -859,10 +869,10 @@ export default function SchemeFinder({
           )}
         </p>
         <div className="mt-3 flex flex-wrap items-center gap-1.5 font-mono text-[10px] text-slate-400 dark:text-slate-500">
-          <span className="rounded-full border border-slate-200 px-2 py-1 dark:border-slate-700">1 · Profile</span>
-          <span className="rounded-full border border-slate-200 px-2 py-1 dark:border-slate-700">2 · Documents</span>
-          <span className="rounded-full border border-saffron-300 bg-saffron-50 px-2 py-1 font-semibold text-saffron-600 dark:border-saffron-500/30 dark:bg-saffron-500/10 dark:text-saffron-400">
-            3 · Official Verification
+          <span className="rounded-full border border-slate-200 px-2.5 py-1 dark:border-slate-700">1 · Check your profile</span>
+          <span className="rounded-full border border-slate-200 px-2.5 py-1 dark:border-slate-700">2 · Review document readiness</span>
+          <span className="rounded-full border border-saffron-300 bg-saffron-50 px-2.5 py-1 font-semibold text-saffron-600 dark:border-saffron-500/30 dark:bg-saffron-500/10 dark:text-saffron-400">
+            3 · Verify on official portal
           </span>
         </div>
       </div>
@@ -955,8 +965,7 @@ export default function SchemeFinder({
           Save profile
         </button>
         <p className="mt-2 text-[11px] text-slate-400 dark:text-slate-500">
-          Both the eligibility screening and the required-document lists shown below are simplified prototype
-          screening rules — not sourced from official portals — and should not be treated as final requirements.
+          Provide your profile details to check scheme relevance and compare your available documents against expected requirements.
         </p>
       </div>
 
@@ -968,7 +977,7 @@ export default function SchemeFinder({
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           <div className="rounded-xl border border-slate-100 p-3 dark:border-slate-800">
             <div className="text-xl font-bold text-emerald-600 dark:text-emerald-400">{summary.matchCount}</div>
-            <div className="text-[11px] text-slate-500 dark:text-slate-400">Potential scheme{summary.matchCount === 1 ? '' : 's'}</div>
+            <div className="text-[11px] text-slate-500 dark:text-slate-400">Potential schemes</div>
           </div>
           <div className="rounded-xl border border-slate-100 p-3 dark:border-slate-800">
             <div className="text-xl font-bold text-slate-900 dark:text-white">{summary.docsAvailable}</div>
@@ -976,13 +985,13 @@ export default function SchemeFinder({
           </div>
           <div className="rounded-xl border border-slate-100 p-3 dark:border-slate-800">
             <div className="text-xl font-bold text-amber-600 dark:text-amber-400">{summary.needDocs}</div>
-            <div className="text-[11px] text-slate-500 dark:text-slate-400">Matches need documents</div>
+            <div className="text-[11px] text-slate-500 dark:text-slate-400">Matches needing documents</div>
           </div>
           <div className="rounded-xl border border-slate-100 p-3 dark:border-slate-800">
             <div className={`text-xl font-bold ${summary.identityIssues ? 'text-rose-500 dark:text-rose-400' : 'text-slate-900 dark:text-white'}`}>
               {summary.identityIssues}
             </div>
-            <div className="text-[11px] text-slate-500 dark:text-slate-400">Identity issue{summary.identityIssues === 1 ? '' : 's'} need attention</div>
+            <div className="text-[11px] text-slate-500 dark:text-slate-400">Identity issues to review</div>
           </div>
         </div>
       </div>
@@ -1047,10 +1056,15 @@ export default function SchemeFinder({
         ))}
       </div>
 
-      <p className="mt-8 flex items-center justify-center gap-1.5 text-center font-mono text-[11px] text-slate-400 dark:text-slate-500">
-        <span>🛡️</span>
-        Preliminary check only — eligibility is confirmed on the official scheme portal.
-      </p>
+      <div className="mt-8 text-center text-xs text-slate-400 dark:text-slate-500 space-y-1">
+        <p className="flex items-center justify-center gap-1.5">
+          <span>🛡️</span>
+          Preliminary guidance only. Scheme relevance and document-readiness indicators do not determine official eligibility. Always verify current requirements on the responsible official portal.
+        </p>
+        <p className="text-[11px]">
+          Scheme guidance is based on a curated dataset used for this implementation.
+        </p>
+      </div>
     </div>
   );
 }
